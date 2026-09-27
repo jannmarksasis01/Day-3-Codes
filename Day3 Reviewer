@@ -1,0 +1,437 @@
+conf t
+int lo101
+ip add 10.100.10.33 255.255.255.224
+
+
+int lo102
+ip add 10.100.10.65 255.255.255.224
+
+int lo103
+ip add 10.100.10.97 255.255.255.224
+
+
+int lo104
+ip add 10.100.10.129 255.255.255.224
+
+
+
+int lo105
+ip add 10.100.10.161 255.255.255.224
+
+
+int lo106
+ip add 10.100.10.193 255.255.255.224
+
+
+int lo107
+ip add 10.100.10.193 255.255.255.224
+
+
+int lo108
+ip add 10.100.10.225 255.255.255.224
+
+
+
+
+
+
+CISCO Routning Protocols
+to be a master of routing, "IM BODSS"
+
+I- IS-IS ( CCIE Level)
+M - MPLS (Multi Protocol Layer Switching) (CCNP Level)
+---------------------------------------------------------
+B - BGP (Border Gateway Protocol) (CCNP Level, but prefereable with experience on CCNA)
+O - OSPF ( Open Shortest Path First)
+D - EIGRP (Enhance Interior Gateway Protocol)
+--------------------------------------------------------------------
+S - Static Route
+S* - Default Static (Stub Routing)
+-
+Best practive in routing. the tow rules in pingables.
+1. PING = DIKIT
+2. ROUTE =NOT DIKIT
+
+STATIC ROUTING 
+AD - Administrative Distance is 2
+- also known as Manual Routing 
+Applying Static Route Requires 2 way configuration
+-----------------------------------------------------------------
+Recipe: ip route <not directly connected network IP> <subnet mask of NDCN> <Host IP of next hop>
+
+@R4 to R2 Routing 
+conf t
+ip route 10.1.1.4 255.255.255.252 10.1.1.9
+!( 10.1.1.4 is net IP for 10.1.1.5 & 19.1.1.6)
+
+
+(R2) 
+ip route 10.1.1.8 255.255.255.252 10.1.1.6
+(10.1.1.6 is netIP og 10.1.1.9 & 10.1.1.10
+
+@R3--->1
+conf t
+ip route 10.1.1.0 255.255.255.252 10.1.1.5
+!(10.1.1.0 is netip for 10.1.1.1 & 10.1.1.2)
+end
+
+@(R1)
+ip route 10.1.1.4 255.255.255.252 10.1.1.2)
+!(10.1.1.4 is netip for 10.1.1.5 & 10.1.1.6)
+
+@R1- R4 
+conf t
+ip route 10.1.1.0 255.255.255.252 10.1.1.2
+!(10.1.1.8 is net ip for 10.1.1.10)
+
+
+@R4
+conf t
+ip route 10.1.1.0 255.255.255.252 10.1.1.9
+!(10.1.1.0 is net ip for 10.1.1.10)
+
+(R1-R4 return to default for OSPF Later 
+conf t
+no ip routing 
+ip routing
+end
+--------------------------------------------------------------------------
+
+
+Dynamic routing 
+(EIRGP - OSPF - BGP)
+!prepare C1/C2 for DHCP
+
+@C1
+conf t
+ip dhcp excluded-address 10.2.1.1 10.2.1.99
+ip dhcp excluded-address 10.2.1.200 10.2.1.254
+ip dhcp pool vlan10
+network 10.2.1.0 255.255.255.0
+default-router 10.2.1.254
+end
+
+@A1
+conf t
+int e0/0
+switchport mode access
+switchport access vlan 10
+
+@P1
+conf t
+int e0/0
+ip add dhcp
+no shut 
+end
+
+
+@C2
+conf t
+ip dhcp excluded-address 10.2.2.1 10.2.2.99
+ip dhcp excluded-address 10.2.2.200 10.2.2.254
+ip dhcp pool vlan20
+network 10.2.2.0 255.255.255.0
+default-router 10.2.2.254
+end
+
+@A2
+conf t
+int e1/0
+switchport mode access
+switchport access vlan 20
+end
+
+P2
+conf t 
+int e1/0
+ip add dhcp
+no shut
+end
+
+
+----------------------------------
+EIRGP ROUTINGEIRGP
+-The best dynamic routing protocol
+- Cisco Proprietary 
+- EIGRP Best routing protocol
+-Administrative Distance is 90
+-Same AS number to other routers advertises.
+
+EIGRP recipe:
+router eigrp ##( Autonomous System No.)
+no auto-summary
+network < directly connected netIP> <wildcard mask of Directly connected network> optional
+
+@C1
+conf t
+router eigrp 100
+no auto-summary
+network 10.1.4.4 0.0.0.3
+network 10.2.1.0 0.0.0.255
+network 10.2.2.0 0.0.0.255
+network 192.168.1.128 0.0.0.31
+end
+
+
+
+@C2
+conf t
+router eigrp 100
+no auto-summary
+network 10.1.4.8 0.0.0.3
+network 10.2.1.0 0.0.0.255
+network 10.2.2.0 0.0.0.255
+network 192.168.1.128 0.0.0.31
+end
+
+
+@R4
+conf t 
+router eigrp 100
+no auto-summary
+network 10.1.4.4 0.0.0.3
+network 10.1.4.8 0.0.0.3
+end
+
+sh ip route eigrp (must have D)
+show ip eigrp neighbor (must have uptime)
+
+-----------------------------------------------
+OSPF Routing (Open Shortest Path first)
+- Multi -Vendor Dynamic Routing
+-implements Dijkstra Algorithm - best path
+-Administrative Distance of 110 hops
+-Advertised by AREA.
+
+OSPF states: DOWN > INIT >TWO-WAY> EX START > EXCHANGE > LOADING >FULL
+
+DR- Designated Router 
+BDR - Backup Designated ROuter
+-(Non or DRother) - Router without special admin Duty
+
+ABR-Area Boundary Router
+ASBR - Autonomous System Boundaru Router
+
+OSPF LSA (Link State Advertisement Types)
+Type 1 LSA (Router LSA) - Advertising the "O"
+Type 2 LSA ( Network LSA) - Advertise By Designated Router(DR) sh ip ospf nei
+Type 3 LSA ( Summary LSA) - Advertising the "O IA" sh ip route ospf
+Type 4 LSA (ASBR Summary LSA) Autonomous system Boundary Router - Metric
+Type 5 LSA (AS External) -Advertising the "O" E2
+
+
+Recipe:
+router ospf number# <Process ID>
+router-id <ip, mostly loopback>
+network <Directly connected network> <wildcard of Directly connected network> Area number.
+@R4
+router-id 4.4.4.4 - loop back
+conf t
+router ospf 1 
+router-id 4.4.4.4 
+network 10.1.1.8 0.0.0.3 area 34
+network 4.4.4.4 0.0.0.0 area 34
+end
+
+@R3
+conf t
+router ospf 1 
+router-id 3.3.3.3
+network 10.1.1.8 0.0.0.3 area 34
+network 3.3.3.3 0.0.0.0 area 34
+end
+
+router ospf 1
+router-id 3.3.3.3
+network 3.3.3.3 0.0.0.0 area 0
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.8 0.0.0.3 area 34
+
+@R2
+conf t 
+router ospf 1
+router-id 2.2.2.2
+network 10.1.1.0 0.0.0.3 area 12
+network 10.1.1.4 0.0.0.3 area 0
+network 2.2.2.2 0.0.0.0 area 0
+end
+
+
+
+@R1
+conf t 
+router ospf 1
+router-id 1.1.1.1
+network 10.1.1.0 0.0.0.3 area 12
+network 1.1.1.1 0.0.0.0 area 12
+end
+----------------------------------------------------------------------
+BGP Routing 
+-Mostly used for WAN
+-used by ISP and Large Corporations
+-Big Payroll
+
+BGP states: Notifications, Openm Keep-Alive 
+
+recipe:
+router bgp # <AS no.>
+bgp log-neighbor-changes
+neighbor <direct IP of next peer> remote-as # <AS no. of neighbor>
+network <netIP between this host and neighbor> nmask <Subnet mask of neighbor>
+end
+
+@R1
+conf t
+router bgp 1
+bgp log-neighbor-changes
+neighbor 208.8.8.4 remote-as 45
+neighbor 207.7.7.2 remote-as 2
+neighbor 209.9.9.3 remote-as 3
+network 208.8.8.0 mask 255.255.255.0
+network 207.7.7.0 mask 255.255.255.0
+network 209.9.9.0 mask 255.255.255.0
+network 10.1.1.0 mask 255.255.255.252
+end
+
+@I1 - converge
+conf t
+router bgp 1
+bgp log-neighbor-changes
+neighbor 208.8.8.1 remote-as 1
+neighbor 24.2.4.2 remote-as 2
+neighbor 45.4.5.5 remote-as 45
+network 208.8.8.0 mask 255.255.255.0
+network 24.2.4.0 mask 255.255.255.0
+network 45.4.5.0 mask 255.255.255.0
+end
+
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+
+@I2 PLDT
+conf t
+router bgp 1
+bgp log-neighbor-changes
+neighbor 208.8.8.1 remote-as 1
+neighbor 24.2.4.2 remote-as 2
+neighbor 45.4.5.5 remote-as 45
+network 208.8.8.0 mask 255.255.255.0
+network 24.2.4.0 mask 255.255.255.0
+network 45.4.5.0 mask 255.255.255.0
+end
+
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+
+
+@I1- Converge
+conf t
+router bgp 45
+bgp log-neighbor-changes
+neighbor 208.8.8.1 remote-as 1
+neighbor 24.2.4.2 remote-as 2
+neighbor 45.4.5.5 remote-as 45
+network 208.8.8.0 mask 255.255.255.0
+network 24.2.4.0 mask 255.255.255.0
+network 45.4.5.0 mask 255.255.255.0
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+@I2- PLDT
+conf t
+router bgp 2
+bgp log-neighbor-changes
+neighbor 25.2.5.5 remote-as 45
+neighbor 24.2.4.4 remote-as 45
+neighbor 207.7.7.1 remote-as 45
+neighbor 32.3.2.3 remote-as 3
+network 25.2.5.0 mask 255.255.255.0
+network 24.2.4.0 mask 255.255.255.0
+network 207.7.7.0 mask 255.255.255.0
+network 32.3.2.0 mask 255.255.255.0
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+
+
+@I3
+conf t
+router bgp 3
+bgp log-neighbor-changes
+neighbor 35.3.5.5 remote-as 45
+neighbor 32.3.2.2 remote-as 2
+neighbor 209.9.9.1 remote-as 1
+network 35.3.5.0 mask 255.255.255.0
+network 32.3.2.0 mask 255.255.255.0
+network 209.9.9.0 mask 255.255.255.0
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 209.9.9.1
+end
+
+
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 209.9.9.1
+end
+
+
+@Google DNS
+conf t
+router bgp 45
+bgp log-neighbor-changes
+neighbor 35.3.5.3 remote-as 3
+neighbor 25.2.5.2 remote-as 2
+neighbor 45.4.5.4 remote-as 45
+network 35.3.5.0 mask 255.255.255.0
+network 45.4.5.0 mask 255.255.255.0
+network 209.9.9.0 mask 255.255.255.0
+network 8.8.8.8 mask 255.255.255.255
+end
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 209.9.9.1
+end
+
+
+
+--------------------------------------------------
+
+Connecting eigrp to ospf
+Route Redistribution (Translates different routing protocols)
+@R1 ( BGP/OSPF redistribution)
+conf t
+ospf 1
+default-information originate always
+end
+
+
+
+
+@R4 - OSPF and EIGRP Redistribution)
+Pasok eigrp kay ospf
+
+conf t
+router ospf 1
+redistribute eigrp 100 subnets
+exit
+
+!Pasok ospf kay eigrp
+router eigrp 100
+redistribute ospf 1 metric (bandwidth)1544 (delay)2000 (reliability)255 (Loading)1 (Mtu)1500
+end
